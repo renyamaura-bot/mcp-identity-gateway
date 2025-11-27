@@ -1,210 +1,143 @@
 # mcp-identity-gateway
 
-AI Agents and Identity Platforms: Auditability over Powerful APIs  
-An MCP-based gateway design and reference implementation for Okta
+**AI Agents and Identity Platforms: Auditability over Powerful APIs**
 
-This repository contains:
+An MCP-based gateway design and reference implementation for Okta.
 
-- A reference whitepaper describing an MCP-based gateway pattern between AI agents and identity platforms, with a focus on auditability and CISO-level concerns.
-- Sample FastMCP-based integration modules for Okta and Okta Workflows, implementing:
-  - User suspension and rollback
-  - System log search and risk analysis
-  - Password reset, user lookup, and notification flows
-- Example audit and semantic event artifacts.
+## Overview
 
-The implementation is designed to be vendor-neutral at the architectural level while using Okta and Okta Workflows as concrete examples.
+AI agents are becoming powerful tools for security operations and identity administration. However, directly exposing identity platform APIs (create user, reset password, suspend account) to AI agents introduces significant governance and audit risks. This repository demonstrates a gateway pattern where AI agents communicate through Model Context Protocol (MCP) tools, all backed by explicit audit trails that capture not just *what* happened, but *why* the AI made that decision.
 
----
+The design emphasizes **explainability over raw API power**. Rather than giving AI agents unrestricted access to identity APIs, we introduce an MCP gateway that sits between the AI and Okta. All AI-driven operations pass through this gateway, are authorized via explicit scopes, and are recorded in transaction-level audit logs that include the AI's reasoning.
+
+This repository is a **reference implementation**. It is intended to support governance discussions, proof-of-concept work, and architectural planning for organizations evaluating how to safely delegate identity operations to AI agents.
 
 ## Repository layout
 
 ```text
 mcp-identity-gateway/
-  README.md              # This file
+  README.md
+  LICENSE
   docs/
-    whitepaper.md        # Full design and evaluation paper
-    architecture-overview.png   # Optional architecture diagram
-    audit-log-sample.json       # Example AI action audit record
-    semantic-event-sample.json  # Example normalized System Log event
+    whitepaper.md
+    Executive-Summary-for-CISO.md
+    audit-log-sample.json
+    semantic-event-sample.json
+  examples/
+    example_conversation.md
+    audit-log-sample.jsonl
   src/
-    okta_audit_and_rollback.py  # FastMCP tools for suspend / unsuspend + audit logging
-    okta_systemlog.py           # FastMCP tools for System Log search and vector store
-    okta_workflows.py           # Consolidated FastMCP server integrating Okta Workflows
     __init__.py
+    okta_audit_and_rollback.py
+    okta_systemlog.py
+    okta_workflows.py
 ```
 
-You are expected to bring your own Okta tenant and Okta Workflows HTTP flows. The Python modules call those flows via environment-configured URLs and tokens.
+## What this repository demonstrates
 
----
+This repository contains three FastMCP server implementations that together form an AI-safe gateway to Okta:
+
+- **MCP gateway between AI agents and Okta**: A clean abstraction where the AI agent calls MCP tools rather than Okta REST APIs directly.
+- **Okta Workflows as the execution layer**: Operations like suspend user, reset password, and notify are executed via Okta Workflows HTTP flows, which themselves can include policy checks and approval steps.
+- **Transaction-level AI audit logs**: Every action initiated by the AI is recorded in JSONL format, including the user, action, AI reasoning, timestamp, and outcome. Rollbacks are tracked via transaction IDs.
+- **Semantic event normalization**: Okta System Logs are normalized into a consistent schema, allowing the AI to reason over identity events in a structured way.
+- **Local vector store for behavioral analysis**: Event summaries are embedded and stored in a searchable JSONL vector database, enabling pattern detection and anomaly context.
 
 ## Components
 
-- `docs/whitepaper.md`  
-  Full write-up of the architecture, security model, and lessons learned. This is the primary document to share with CISOs, security architects, and auditors.
+**Documentation:**
 
-- `src/okta_workflows.py`  
-  Main FastMCP server file that exposes tools such as:
-  - `suspend_user`
-  - `reactivate_user`
-  - `reset_password`
-  - `read_user`
-  - `search_logs`
-  - `analyze_identity_state`
-  - `detect_anomalies_ml`
-  - `detect_impossible_travel`
-  - `notify_user`  
-  It includes device authorization, scope checking, JWT validation, and risk / anomaly analysis logic.
+- `docs/whitepaper.md` — Technical architecture and design rationale for security architects and IAM engineers.
+- `docs/Executive-Summary-for-CISO.md` — High-level overview for CISOs and audit stakeholders covering governance, control, and risk mitigation.
+- `docs/audit-log-sample.json` — Example of a single AI-driven action audit log entry showing transaction ID, action, reasoning, status, and timestamp.
+- `docs/semantic-event-sample.json` — Example of a normalized semantic event derived from an Okta System Log, including actor, target, risk signals, and client context.
 
-- `src/okta_audit_and_rollback.py`  
-  Focused module for:
-  - Calling Okta Workflows HTTP flows for `suspend_user` and `unsuspend_user`
-  - Writing transaction-level JSONL audit logs for AI-driven actions
+**Examples:**
 
-- `src/okta_systemlog.py`  
-  Focused module for:
-  - Calling Okta Workflows to search System Logs
-  - Storing and retrieving behavioral summaries in a local vector store (JSONL)
+- `examples/example_conversation.md` — Narrative walkthrough of a realistic incident response scenario: analyst queries user activity, AI analyzes logs, AI suspends account, and audit is recorded.
+- `examples/audit-log-sample.jsonl` — Two sample JSONL lines showing a suspend action followed by a rollback (unsuspend) that references the original transaction.
 
----
+**Source code:**
+
+- `src/okta_workflows.py` — FastMCP server providing Device Authorization Grant, scope-based access control, log analysis, anomaly detection, and user operations (suspend, reset password, read user, notify).
+- `src/okta_audit_and_rollback.py` — FastMCP server for suspend / unsuspend operations with explicit transaction-level audit logging in JSONL format.
+- `src/okta_systemlog.py` — FastMCP server for semantic normalization of Okta System Logs, heuristic risk analysis, and OpenAI-powered behavior vectorization and similarity search.
 
 ## Prerequisites
 
-- Python 3.10+ (3.11 recommended)
-- A working FastMCP environment and client (e.g., Claude Desktop, ChatGPT MCP, or another MCP-capable chat client)
-- An Okta tenant with:
-  - An authorization server for OAuth 2.0 / OIDC
-  - An OIDC client (for device authorization)
-  - Okta Workflows with HTTP flows for:
-    - Suspend user
-    - Unsuspend / reactivate user
-    - Reset password
-    - Search System Logs
-    - Read user attributes
-    - Send notification emails
-- Python dependencies (install via `pip` or your preferred tool):
-  - `fastmcp`
-  - `requests`
-  - `PyJWT`
-  - `scikit-learn`
+**Python:** 3.9 or later.
 
----
+**MCP client:** An MCP-capable AI client such as Claude Desktop, ChatGPT with MCP support, or a custom agent framework.
+
+**Okta tenant:** You must have:
+
+- An Okta organization with API access.
+- An OAuth 2.0 authorization server.
+- An OIDC client configured for Device Authorization Grant flow.
+- Okta Workflows HTTP flows for: suspend user, unsuspend user, reset password, search system logs, read user, and notify user.
+
+**Python dependencies:**
+
+- fastmcp
+- requests
+- PyJWT
+- scikit-learn
+- openai
+- numpy
 
 ## Environment configuration
 
-The modules read configuration from environment variables. Typical variables include:
+All credentials and URLs are supplied via environment variables. No secrets are stored in this repository.
 
-### Identity platform and OAuth
+**OAuth / Device Authorization:**
 
-- `OKTA_ISSUER`  
-  Example: `https://your-domain.okta.com/oauth2/default`
+- `OKTA_ISSUER` — Okta organization base URL (e.g., `https://myorg.okta.com`).
+- `OKTA_CLIENT_ID` — OAuth client ID.
+- `OKTA_CLIENT_SECRET` — OAuth client secret.
+- `OKTA_AUTH_SERVER_ID` — Authorization server ID.
 
-- `OKTA_CLIENT_ID`  
-  Client ID of the OIDC app used for device authorization.
+**Okta Workflows HTTP flows (URL + token for each):**
 
-- `OKTA_CLIENT_SECRET`  
-  Client secret for the same app.
+- `OKTA_WF_SUSPEND_USER_URL` / `OKTA_WF_SUSPEND_USER_TOKEN`
+- `OKTA_WF_UNSUSPEND_USER_URL` / `OKTA_WF_UNSUSPEND_USER_TOKEN`
+- `OKTA_WF_RESET_PASSWORD_URL` / `OKTA_WF_RESET_PASSWORD_TOKEN`
+- `OKTA_WF_SEARCH_LOGS_URL` / `OKTA_WF_SEARCH_LOGS_TOKEN`
+- `OKTA_WF_READ_USER_URL` / `OKTA_WF_READ_USER_TOKEN`
+- `OKTA_WF_NOTIFY_USER_URL` / `OKTA_WF_NOTIFY_USER_TOKEN`
 
-- `OKTA_AUTH_SERVER_ID`  
-  Authorization server ID (e.g., `default` or a custom ID).
+**Audit and vector storage:**
 
-### Okta Workflows HTTP flows
+- `AUDIT_LOG_DIR` — Directory for storing JSONL audit logs (default: `/tmp/okta_audit`).
+- `VECTOR_DB_PATH` — Path to the JSONL vector database (default: `./vector_db.jsonl`).
 
-- `OKTA_WF_RESET_PASSWORD_URL`  
-- `OKTA_WF_RESET_PASSWORD_TOKEN`
+## Quick start
 
-- `OKTA_WF_SUSPEND_USER_URL`  
-- `OKTA_WF_SUSPEND_USER_TOKEN`
+1. **Implement Okta Workflows HTTP flows.** In Okta Workflows, create HTTP-triggered flows for suspend_user, unsuspend_user, reset_password, search_logs (System Log API), read_user, and notify_user. Each flow should accept `user_login` and `reason` parameters. Document the HTTP endpoint URL and generate an API token for each flow.
 
-- `OKTA_WF_UNSUSPEND_USER_URL`  
-- `OKTA_WF_UNSUSPEND_USER_TOKEN`
+2. **Set environment variables.** Create a `.env` file or export the variables listed in the Environment configuration section above. Ensure all OAuth and Workflows URLs and tokens are present.
 
-- `OKTA_WF_SEARCH_LOGS_URL`  
-- `OKTA_WF_SEARCH_LOGS_TOKEN`
+3. **Install Python dependencies.** Run:
 
-- `OKTA_WF_READ_USER_URL`  
-- `OKTA_WF_READ_USER_TOKEN`
+   ```bash
+   pip install fastmcp requests PyJWT scikit-learn openai numpy
+   ```
 
-- `OKTA_WF_NOTIFY_USER_URL`  
-- `OKTA_WF_NOTIFY_USER_TOKEN`
+4. **Run the three MCP servers.** In separate terminals (or using a process manager), start each server:
 
-### Audit and vector store
+   ```bash
+   python src/okta_workflows.py
+   python src/okta_systemlog.py
+   python src/okta_audit_and_rollback.py
+   ```
 
-- `AUDIT_LOG_DIR`  
-  Directory for JSONL audit logs of AI-driven actions.  
-  Default: `/tmp/okta_audit`
+5. **Configure MCP client.** In your MCP-capable client (e.g., Claude Desktop, custom agent), add server configurations pointing to each of the three servers. Refer to your client's MCP documentation for details.
 
-- `VECTOR_DB_PATH`  
-  Path to the JSONL file used as a simple vector store for behavioral summaries.  
-  Default: `./vector_db.jsonl`
+6. **Inspect audit logs and examples.** Review `examples/audit-log-sample.jsonl` and `examples/example_conversation.md` to understand the expected audit trail format and a realistic usage scenario.
 
-These flows are expected to be implemented on the Okta Workflows side and to accept/return JSON payloads consistent with the Python code.
-
----
-
-## How to use (high-level)
-
-1. **Prepare Okta Workflows**  
-   - Create HTTP-triggered flows for:
-     - Suspend / unsuspend user
-     - Reset password
-     - Search System Logs
-     - Read user attributes
-     - Send notification emails  
-   - Configure authentication (e.g., API token in a header) and copy the URLs and tokens into environment variables.
-
-2. **Configure OAuth and device authorization**  
-   - Create an OAuth / OIDC client for the MCP gateway.  
-   - Enable device authorization grant on the authorization server.  
-   - Set `OKTA_ISSUER`, `OKTA_CLIENT_ID`, `OKTA_CLIENT_SECRET`, and `OKTA_AUTH_SERVER_ID`.
-
-3. **Set environment variables**  
-   - Export all required `OKTA_WF_*`, `AUDIT_LOG_DIR`, and `VECTOR_DB_PATH` values in your runtime environment.
-
-4. **Run the FastMCP server**  
-   - Use your FastMCP runtime to expose `src/okta_workflows.py` (and optionally the other modules) as an MCP server.  
-   - Configure your MCP client to call this server (for example, via a command like `python src/okta_workflows.py` or an equivalent entrypoint, depending on your FastMCP setup).
-
-5. **Connect from an AI client**  
-   - Configure your AI chat client (Claude, ChatGPT, etc.) to use the MCP server.  
-   - The AI client will:
-     - Run a device authorization flow via the gateway  
-     - Obtain a token with approved scopes  
-     - Call tools like `analyze_identity_state`, `suspend_user`, or `notify_user` as part of conversations
-
-6. **Review audit artifacts**  
-   - Inspect `AUDIT_LOG_DIR` for JSONL audit records of AI-driven actions.  
-   - Inspect `VECTOR_DB_PATH` for behavioral summary vectors and metadata.  
-   - Refer to `docs/audit-log-sample.json` and `docs/semantic-event-sample.json` for format references.
+7. **Test with analyze_identity_state.** Start with the `analyze_identity_state()` tool to verify log retrieval and semantic normalization. Then proceed to actions like `suspend_user()` once you confirm the audit trail is working.
 
 ---
 
-## Whitepaper
+**License:** MIT (see LICENSE file).
 
-The design, threat model, and recommendations for CISOs are documented in:
-
-- `docs/whitepaper.md`
-
-Suggested PDF title when exporting:
-
-- `AI-Agents-and-Identity-Platforms-Auditability-over-Powerful-APIs.pdf`
-
-You can render the Markdown to PDF using your preferred tool (for example, VS Code extensions, Pandoc, or a documentation pipeline) when sharing externally.
-
----
-
-## Intended use
-
-This repository is intended as:
-
-- A reference architecture for connecting AI agents to identity platforms through an MCP gateway.
-- A concrete example of how to:
-  - Enforce scopes and device authorization for AI clients
-  - Derive risk and anomaly signals from System Logs
-  - Record AI-driven actions with transaction-level audit logs and reasoning
-- A starting point for organizations that want to evaluate AI-assisted identity operations under strong auditability and governance constraints.
-
-It is not a turnkey product. You are expected to:
-
-- Adapt the Okta Workflows flows to your own tenant and policies.
-- Adjust scopes, tools, and governance rules to match your risk appetite.
-- Review and extend the code before using it in any production context.
+**Disclaimer:** This is a reference implementation for evaluation and architectural planning purposes. It is not production-hardened. Before using in a production environment, conduct a thorough security review, implement additional error handling, and ensure compliance with your organization's governance and audit policies.

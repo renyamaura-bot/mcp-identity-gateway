@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "event_id": "evt_xyz123456789",
+  "event_time": "2025-01-15T14:28:00Z",
+  "event_type": "user.authentication.auth_fail",
+  "category": "authentication",
+  "action": "auth_fail",
+  "severity": "WARN",
+  "display_message": "Failed authentication attempt",
+  "legacy_event_type": "user.session.start_fail",
+  "actor": {
+    "id": "00u1a2b3c4d5e6f7g8h9",
+    "type": "user",
+    "raw_type": "User",
+    "login": "alice.johnson@example.com",
+    "display_name": "Alice Johnson"
+  },
+  "primary_target": {
+    "id": "app_oauth_google",
+    "type": "application",
+    "raw_type": "AppInstance",
+    "alternate_id": "google",
+    "display_name": "Google Workspace"
+  },
+  "subject_user": {
+    "id": "00u1a2b3c4d5e6f7g8h9",
+    "login": "alice.johnson@example.com",
+    "display_name": "Alice Johnson",
+    "role": "actor"
+  },
+  "client": {
+    "ip": "203.0.113.45",
+    "device": "Chrome on macOS",
+    "zone": "null",
+    "user_agent": {
+      "raw": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      "os": "Mac OS X",
+      "browser": "Chrome"
+    },
+    "geo": {
+      "city": "San Francisco",
+      "state": "California",
+      "country": "United States",
+      "postal_code": "94102",
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    }
+  },
+  "request": {
+    "ip": "203.0.113.45",
+    "uri": "/oauth2/v1/authorize",
+    "url": "https://example.okta.com/oauth2/v1/authorize?client_id=...",
+    "transaction_id": "YRl0l0iBBsaVlYTLBEL1oI7Nw",
+    "transaction_type": "WEB",
+    "session_id": "102q-EtQJAVQvBQLokPvNj-Rg"
+  },
+  "outcome": {
+    "result": "FAILURE",
+    "reason": "Invalid password"
+  }
+}
