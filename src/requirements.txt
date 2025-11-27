@@ -1,0 +1,5 @@
+requests
+fastmcp
+numpy
+scikit-learn
+openai

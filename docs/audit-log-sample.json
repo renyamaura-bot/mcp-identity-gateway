@@ -1,0 +1,10 @@
+{
+  "transaction_id": "b7b5f6b8-3b8b-4e9e-84b7-9c5a8a9f8b13",
+  "timestamp": "2025-11-26T09:32:15Z",
+  "operation": "suspend_user",
+  "user_login": "user@example.com",
+  "status": "success",
+  "rollback_of": null,
+  "ai_reasoning": "Multiple failed logins from unusual locations and an impossible-travel alert indicate that this account is likely compromised. Suspending access while investigation continues is the safest option.",
+  "actor_client": "ai-mcp-client-1"
+}

@@ -1,0 +1,20 @@
+{
+  "event_id": "01HF3FQS9K1XJKNF3Z8P6D2M5A",
+  "timestamp": "2025-11-26T08:21:03Z",
+  "actor_type": "user",
+  "actor_id": "user@example.com",
+  "subject_user": "user@example.com",
+  "primary_target": "authentication",
+  "category": "authentication",
+  "outcome": "failure",
+  "severity": "medium",
+  "client_ip": "198.51.100.10",
+  "client_ua": "Mozilla/5.0",
+  "geolocation": {
+    "country": "US",
+    "city": "New York",
+    "latitude": 40.7128,
+    "longitude": -74.006
+  },
+  "description": "User authentication failed due to invalid password."
+}
